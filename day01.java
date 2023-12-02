@@ -1,7 +1,7 @@
 import java.util.*;
 import java.io.*;
 
-class Main {
+class day01 {
   private static void checkLine(int start, String line, String num, int n, HashMap<Integer, Integer> hm)
   {
     int index = line.indexOf(num, start);
