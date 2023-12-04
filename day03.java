@@ -25,38 +25,15 @@ class day03 {
   }
   static boolean adjacentSymbol(int i, int j, char[][] schematic)
   {
-    // if top 
-    if (i == 0)
-    {
-      // if top left
-      if (j == 0)
-        return symbol(i + 1, j, schematic) || symbol(i, j + 1, schematic) || symbol(i + 1, j + 1, schematic);
-      // if top right
-      if (j == SIZE - 1)
-        return symbol(i + 1, j, schematic) || symbol(i, j - 1, schematic) || symbol(i + 1, j - 1, schematic);
-      // just top
-      return symbol(i + 1, j, schematic) || symbol(i, j - 1, schematic) || symbol(i + 1, j - 1, schematic) || symbol(i + 1, j + 1, schematic) || symbol(i, j + 1, schematic);
-    }
-    // if bottom
-    if (i == SIZE - 1)
-    {
-      // if bottom left
-      if (j == 0)
-        return symbol(i - 1, j, schematic) || symbol(i, j + 1, schematic) || symbol(i - 1, j + 1, schematic);
-      // if bottom right
-      if (j == SIZE - 1)
-        return symbol(i - 1, j, schematic) || symbol(i, j - 1, schematic) || symbol(i - 1, j - 1, schematic);
-      // just bottom
-        return symbol(i - 1, j, schematic) || symbol(i, j - 1, schematic) || symbol(i - 1, j - 1, schematic) || symbol(i, j + 1, schematic) || symbol(i - 1, j + 1, schematic);
-    }
-    // if left
-    if (j == 0)
-      return symbol(i - 1, j + 1, schematic) || symbol(i - 1, j, schematic) || symbol(i + 1, j, schematic) || symbol(i, j + 1, schematic) || symbol(i + 1, j + 1, schematic);
-    // if right
-    if (j == SIZE - 1)
-      return symbol(i + 1, j - 1, schematic) || symbol(i + 1, j, schematic) || symbol(i - 1, j, schematic) || symbol(i, j - 1, schematic) || symbol(i - 1, j - 1, schematic);
-    // center
-    return symbol(i - 1, j + 1, schematic) || symbol(i, j + 1, schematic) || symbol(i + 1, j + 1, schematic) || symbol(i + 1, j - 1, schematic) || symbol(i + 1, j, schematic) || symbol(i - 1, j, schematic) || symbol(i, j - 1, schematic) || symbol(i - 1, j - 1, schematic);
+    int iMin = (i == 0) ? i : i - 1;
+    int iMax = (i == SIZE - 1) ? i : i + 1;
+    int jMin = (j == 0) ? j : j - 1;
+    int jMax = (j == SIZE - 1) ? j : j + 1;
+    Boolean b = false;
+    for (int row = iMin; row <= iMax; row++)
+      for (int col = jMin; col <= jMax; col++)
+        b = b || symbol(row, col, schematic);
+    return b;
   }
   static int gearRatio(int i, int j, char[][] schematic)
   {
@@ -65,19 +42,50 @@ class day03 {
       return 0;
     // is a symbol:
     // if adjacent to only two part numbers
-    int[] dA = digitsAdjacent(i, j, schematic);
-    if (dA.length == 2)
-      return dA[0] * dA[1];
+    ArrayList<Integer> dA = digitsAdjacent(i, j, schematic);
+    if (dA.size() == 2)
+      return dA.get(0) * dA.get(1);
     
     return 0;
   }
-  static int[] digitsAdjacent(int i, int j, char[][] schematic)
+  static ArrayList<Integer> digitsAdjacent(int i, int j, char[][] schematic)
   { 
+    ArrayList<Integer> digits = new ArrayList<>(9);
     int iMin = (i == 0) ? i : i - 1;
     int iMax = (i == SIZE - 1) ? i : i + 1;
-    int jMin = (j == 0) ? j : j - 1;
+    // it's possible that a 3 digit number is adjacent to [i][j] in a diagonal, so the jMin should be j-3 if possible, but if j is 1, for example, it has to be 0.
+    // if j is SIZE-1, jMax has to be SIZE-1; if j is SIZE-2, jMax has to be SIZE-1 to keep anything out of bounds, but if difference between j and SIZE-1 or j and 0 is greater than 3 (?) than jMin can be j - 3 and jMax can be j + 3
+    int jMin = (j < 3) ? 0 : j - 3;
     int jMax = (j == SIZE - 1) ? j : j + 1;
-    return new int[0];
+    for (int row = iMin; row <= iMax; row++)
+    {
+      for (int col = jMin; col <= jMax;)
+      {
+        int numDigits = numDigits(row, col, schematic);
+        switch (numDigits) {
+          case 0:
+            col++;
+            break;
+          case 1:
+            // if it's not diagonal (jMin can be 3 left at times in case of 3 digit number) it isn't adjacent so only add if diag
+            if (col >= j - 1)
+              digits.add(Character.getNumericValue(schematic[row][col]));
+            break;
+          case 2:
+            // same thing: if the digit isn't adjacent it can't be added. col represents the j value of the first digit in a number.
+            if (col >= j - 2)
+              digits.add(10 * Character.getNumericValue(schematic[row][col]) + Character.getNumericValue(schematic[row][col+1]));
+            break;
+          case 3:
+            digits.add(100 * Character.getNumericValue(schematic[row][col]) + 10 * Character.getNumericValue(schematic[row][col+1]) + Character.getNumericValue(schematic[row][col+2]));
+            break;
+        }
+        col += numDigits;
+        if (digits.size() > 2)
+          return digits;
+      }
+    }
+    return digits;
   }
   public static void main(String[] args) throws FileNotFoundException
   {
